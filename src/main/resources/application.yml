@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: api-gateway-rate-limiter
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 200ms   # keep the limiter from slowing requests if Redis is sick
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+ratelimit:
+  enabled: true
+  fail-open: true      # Redis down -> allow traffic (false = reject with 429)
+  key-prefix: "rl:"
+
+  # Anonymous clients, limited per IP: bursts of 10, then 2 requests/second
+  default-policy:
+    capacity: 10
+    refill-per-second: 2
+
+  # Named tiers
+  policies:
+    free:
+      capacity: 20
+      refill-per-second: 5
+    premium:
+      capacity: 100
+      refill-per-second: 50
+
+  # API key -> tier (demo keys only; load real ones from a secret store)
+  api-keys:
+    free-key-123: free
+    premium-key-456: premium
